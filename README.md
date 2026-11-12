@@ -24,3 +24,23 @@ RAG query flow
 - Build a grounded prompt (system rules, context with chunk IDs, question).
 - Stream the answer over SSE, and parse the citations from it.
 - Persist the message, citations, token usage, and latency.
+
+### Commands:
+
+Get the list of all the tables created in pgsql
+```docker exec -it documind-postgres psql -U documind -d documind -c "\dt"```
+
+EF Core set for Migration:
+```dotnet ef migrations add InitialCreate --project src/DocuMind.Infrastructure --startup-project src/DocuMind.Api --output-dir Persistence/Migrations```
+
+DB update:
+```dotnet ef database update --project src/DocuMind.Infrastructure --startup-project src/DocuMind.Api```
+
+Docker Commands:
+- Spin up the containers using the docker-compose.yml file:
+```docker compose up```
+[Restart containers] ```docker compose up -d``` 
+
+- List all the currently running containers
+```docker compose ps```
+
