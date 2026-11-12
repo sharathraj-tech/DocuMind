@@ -1,5 +1,6 @@
 ﻿using DocuMind.Application.Abstractions;
 using DocuMind.Application.Common;
+using DocuMind.Domain.Common;
 using DocuMind.Domain.Entities;
 using DocuMind.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -51,6 +52,107 @@ namespace DocuMind.Infrastructure.Persistence
                 e.Property(x => x.Slug).HasMaxLength(100);
                 e.HasIndex(x => x.Slug).IsUnique();
             });
+
+            builder.Entity<TenantMember>(e =>
+            {
+                e.HasKey(x => new { x.TenantId, x.UserId });
+                e.Property(x => x.Role).HasConversion<string>().HasMaxLength(20);
+                e.HasOne(x=>x.Tenant).WithMany(t=>t.Members).HasForeignKey(x=>x.TenantId);
+                e.HasIndex(x => x.UserId);
+            });
+
+            builder.Entity<Document>(e =>
+            {
+                e.Property(x => x.FileName).HasMaxLength(500);
+                e.Property(x => x.ContentType).HasMaxLength(200);
+                e.Property(x=>x.BlobName).HasMaxLength(500);
+                e.Property(x=>x.ContentHash).HasMaxLength(64);
+                e.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+                e.HasOne<Tenant>().WithMany().HasForeignKey(x=>x.TenantId).OnDelete(DeleteBehavior.Cascade);
+                e.HasIndex(x => new { x.TenantId, x.Status });
+                e.HasIndex(x => new {x.TenantId,x.ContentHash});
+                e.HasMany(x => x.Chunks).WithOne(c => c.Document)
+                    .HasForeignKey(c => c.DocumentId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<DocumentChunk>(e =>
+            {
+                e.Property(x => x.Embedding).HasColumnType($"vector({_dimensions})");
+                e.Property(x => x.EmbeddingModel).HasMaxLength(100);
+                e.HasIndex(x => new { x.DocumentId, x.ChunkIndex }).IsUnique();
+                e.HasIndex(x => x.TenantId);
+                e.HasIndex(x => x.Embedding)
+                    .HasMethod("hnsw")
+                    .HasOperators("vector_cosine_ops")
+                    .HasStorageParameter("m", 16)
+                    .HasStorageParameter("ef_construction", 64);
+            });
+
+            builder.Entity<Conversation>(e =>
+            {
+                e.Property(x => x.Title).HasMaxLength(300);
+                e.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
+                e.HasIndex(x => new { x.TenantId, x.UserId });
+                e.HasMany(x => x.Messages).WithOne(m => m.Conversation)
+                    .HasForeignKey(m => m.ConversationId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<Message>(e =>
+            {
+                e.Property(x => x.Role).HasConversion<string>().HasMaxLength(20);
+                e.Property(x => x.Model).HasMaxLength(100);
+                e.HasIndex(x => new { x.ConversationId, x.CreatedAt });
+                e.HasMany(x => x.Citations).WithOne(c => c.Message)
+                .HasForeignKey(c => c.ChunkId).OnDelete(DeleteBehavior.SetNull);
+            });
+
+            builder.Entity<Citation>(e =>
+            {
+                e.Property(x => x.DocumentName).HasMaxLength(500);
+                e.HasOne<DocumentChunk>().WithMany()
+                    .HasForeignKey(x => x.ChunkId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            builder.Entity<Feedback>(e =>
+            {
+                e.Property(x => x.Comment).HasMaxLength(2000);
+                e.HasIndex(x => new { x.MessageId, x.UserId }).IsUnique();
+            });
+
+            ApplyTenantFilter<Document>(builder);
+            ApplyTenantFilter<DocumentChunk>(builder);
+            ApplyTenantFilter<Conversation>(builder);
+            ApplyTenantFilter<Message>(builder);
+            ApplyTenantFilter<Citation>(builder);
+            ApplyTenantFilter<Feedback>(builder);
+            
+        }
+
+        private void ApplyTenantFilter<T>(ModelBuilder b) where T : class, ITenantOwned
+            => b.Entity<T>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
+
+        //public override Task<int> SaveChangesASync(bool acceptAllChangesOnSuccess,CancellationToken ct = default)
+        //{
+        //    StampTenant();
+        //    return base.SaveChanges(acceptAllChangesOnSuccess);
+        //}
+
+        private void StampTenant()
+        {
+            foreach(var entry in ChangeTracker.Entries<ITenantOwned>()
+                .Where(e=>e.State==EntityState.Added))
+            {
+                if(entry.Entity.TenantId==Guid.Empty)
+                {
+                    entry.Entity.TenantId = CurrentTenantId
+                        ?? throw new InvalidOperationException("Cannot save tenant data without a current tenant.");
+
+                }
+                else if(CurrentTenantId is { } current && entry.Entity.TenantId!=current)
+                {
+                    throw new InvalidOperationException("Cross-tenant write blocked.");
+                }
+            }
         }
 
     }
