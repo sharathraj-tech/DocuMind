@@ -44,3 +44,5 @@ Docker Commands:
 - List all the currently running containers
 ```docker compose ps```
 
+--User Secrets in .NET:
+```dotnet user-secrets init --project src/DocuMind.Api```
