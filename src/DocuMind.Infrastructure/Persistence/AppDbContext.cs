@@ -38,6 +38,7 @@ namespace DocuMind.Infrastructure.Persistence
         public DbSet<Message> Messages => Set<Message>();
         public DbSet<Citation> Citations => Set<Citation>();
         public DbSet<Feedback> Feedbacks => Set<Feedback>();
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -117,6 +118,15 @@ namespace DocuMind.Infrastructure.Persistence
             {
                 e.Property(x => x.Comment).HasMaxLength(2000);
                 e.HasIndex(x => new { x.MessageId, x.UserId }).IsUnique();
+            });
+
+            builder.Entity<RefreshToken>(e =>
+            {
+                e.Property(x => x.TokenHash).HasMaxLength(64);
+                e.HasIndex(x => x.TokenHash).IsUnique();
+                e.HasIndex(x => x.UserId);
+                e.HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne<Tenant>().WithMany().HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade);
             });
 
             ApplyTenantFilter<Document>(builder);

@@ -1,6 +1,17 @@
 @DocuMind.Api_HostAddress = http://localhost:5059
 
-GET {{DocuMind.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Register
+POST {{DocuMind.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
 
-###
+{ "email": "me@example.com", "password": "CorrectHorse1", "displayName": "Me", "workspaceName": "Acme Inc" }
+
+### Me (paste the accessToken from the response)
+GET {{DocuMind.Api_HostAddress}}/api/auth/me
+Authorization: Bearer PASTE_ACCESS_TOKEN
+
+### Refresh
+POST {{DocuMind.Api_HostAddress}}/api/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "PASTE_REFRESH_TOKEN" }
