@@ -38,7 +38,9 @@ namespace DocuMind.Domain.Entities
         public string DocumentName { get; set; } = string.Empty;
         public int? PageNumber { get; set; }
         public string Snippet { get; set; } = string.Empty;
-        public double Score { get; set; }   
+        public double Score { get; set; }
+        public int SourceIndex { get; set; }       // the [n] used in the answer text
+        public Guid? DocumentId { get; set; }      // snapshot; survives reindexing (chunk ids change)
 
     }
 

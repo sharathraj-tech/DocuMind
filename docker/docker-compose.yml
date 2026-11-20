@@ -27,7 +27,12 @@ services:
         container_name: documind-azure
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
+            - ./data:/app/data
         ports:
             - "4577:4577"
+        environment:
+            FLOCI_AZ_STORAGE_MODE: persistent
+            FLOCI_AZ_STORAGE_PERSISTENT_PATH: /app/data
+            FLOCI_AZ_SERVICES_BLOB_ENABLED: true
 volumes:
     pgdata: 

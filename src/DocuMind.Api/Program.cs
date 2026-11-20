@@ -8,12 +8,18 @@ using DocuMind.Api.Auth;
 using DocuMind.Api.Middleware;
 using DocuMind.Api.Endpoints;
 using Microsoft.OpenApi;
+using DocuMind.Application.Abstractions;
+using Microsoft.AspNetCore.Http.Features;
+using DocuMind.Application.Documents;
+using Azure.Storage.Blobs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((ctx, cfg) => cfg.WriteTo.Console());
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApiAuth();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -35,6 +41,12 @@ builder.Services.AddOpenApi(options =>
         return Task.CompletedTask;
     });
 });
+builder.Services.AddSingleton(x => new BlobServiceClient(builder.Configuration["Storage:ConnectionString"]));
+
+
+const long bodyLimit = UploadPolicy.MaxBytes + 1024 * 1024;
+builder.Services.Configure<FormOptions>(o=>o.MultipartBodyLengthLimit = bodyLimit);
+builder.WebHost.ConfigureKestrel(o=>o.Limits.MaxRequestBodySize=bodyLimit);
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.
@@ -54,7 +66,9 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" })).AllowAnonymous();
 app.MapAuthEndPoints();
-
+app.MapDocumentEndpoints();
+app.MapSearchEndpoints();
+app.MapChatEndpoints();
 
 
 app.Run();
