@@ -46,3 +46,14 @@ Docker Commands:
 
 --User Secrets in .NET:
 ```dotnet user-secrets init --project src/DocuMind.Api```
+
+--Check PgVector Version:
+```docker exec -it documind-postgres psql -U documind -d documind -c "select extversion from pg_extension where extname = 'vector';"```
+If older than 0.8.0
+```docker pull pgvector/pgvector:pg16```
+```docker compose up -d --force-recreate postgres```
+```docker exec -it documind-postgres psql -U documind -d documind -c "ALTER EXTENSION vector UPDATE;" ```
+
+Check the vectors:
+```docker exec -it documind-postgres psql -U documind -d documind -c "select embedding_model, count(*) as chunks, count(embedding) as with_vector from document_chunks group by embedding_model;"```
+
