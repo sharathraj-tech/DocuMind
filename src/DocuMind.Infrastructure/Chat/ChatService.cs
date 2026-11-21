@@ -48,7 +48,6 @@ namespace DocuMind.Infrastructure.Chat
                 return;
             }
 
-            // 1. Find or create the conversation. A conversation belongs to the user who started it.
             Conversation conversation;
             if (request.ConversationId is { } existingId)
             {
@@ -66,7 +65,6 @@ namespace DocuMind.Infrastructure.Chat
                 db.Conversations.Add(conversation);
             }
 
-            // History is read before the new message is saved, so it never includes the question itself.
             var history = request.ConversationId is null
                 ? []
                 : await LoadHistoryAsync(conversation.Id, s.HistoryMessages, ct);
@@ -83,7 +81,6 @@ namespace DocuMind.Infrastructure.Chat
 
             try
             {
-                // 2-3. Standalone query, then retrieval.
                 var query = await RewriteAsync(history, question, s, ct);
                 var found = await search.SearchAsync(new SearchRequest(query, s.TopK), ct);
                 if (!found.Succeeded)
@@ -103,18 +100,15 @@ namespace DocuMind.Infrastructure.Chat
                         Snippet(h.Content), h.Score))
                     .ToList();
 
-                // 4. Citation chips can render while the answer is still streaming.
                 await emit(new SourcesEvent(sources));
 
                 if (selected.Count == 0)
                 {
-                    // Nothing relevant: no model call, so no cost and no chance to invent an answer.
                     answer.Append(ChatPrompts.NoAnswer);
                     await emit(new TokenEvent(ChatPrompts.NoAnswer));
                 }
                 else
                 {
-                    // 5. Stream the grounded answer.
                     modelCalled = true;
                     var messages = BuildMessages(history, question, selected);
 
@@ -133,7 +127,7 @@ namespace DocuMind.Infrastructure.Chat
             }
             catch (OperationCanceledException)
             {
-                cancelled = true;   // the user stopped or left; keep whatever was generated so far
+                cancelled = true;
             }
             catch (Exception ex)
             {
@@ -142,7 +136,6 @@ namespace DocuMind.Infrastructure.Chat
                 return;
             }
 
-            // 6. Save the answer with only the sources it cited.
             var text = answer.ToString().Trim();
             if (text.Length == 0) return;
 
@@ -181,7 +174,7 @@ namespace DocuMind.Infrastructure.Chat
 
             try
             {
-                await db.SaveChangesAsync(CancellationToken.None);   // save even if the client already left
+                await db.SaveChangesAsync(CancellationToken.None);
             }
             catch (Exception ex)
             {
@@ -209,8 +202,6 @@ namespace DocuMind.Infrastructure.Chat
             recent.Reverse();
             return recent;
         }
-
-        // Follow-ups like "what about the fees?" don't search well on their own.
         private async Task<string> RewriteAsync(IReadOnlyList<Message> history, string question, ChatSettings s, CancellationToken ct)
         {
             if (history.Count == 0) return question;
@@ -249,7 +240,6 @@ namespace DocuMind.Infrastructure.Chat
                     : new ChatMessage(ChatRole.Assistant, CitationParser.StripMarkers(m.Content)));
             }
 
-            // Fresh context goes right next to the question it is meant for.
             messages.Add(new ChatMessage(ChatRole.User, $"{PromptBuilder.BuildContext(selected)}\n\nQuestion: {question}"));
             return messages;
         }
