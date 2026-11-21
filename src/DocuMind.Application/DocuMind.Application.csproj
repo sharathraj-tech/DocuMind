@@ -10,8 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Documents\" />
-    <Folder Include="Chat\" />
+    <Folder Include="AI\" />
   </ItemGroup>
 
   <PropertyGroup>

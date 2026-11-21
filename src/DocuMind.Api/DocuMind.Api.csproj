@@ -27,4 +27,6 @@
     <Folder Include="Streaming\" />
   </ItemGroup>
 
+  <ProjectExtensions><VisualStudio><UserProperties appsettings_1development_1json__JsonSchema="https://www.schemastore.org/zeropress-wxr-import-base-0.7.json" /></VisualStudio></ProjectExtensions>
+
 </Project>

@@ -39,6 +39,10 @@ namespace DocuMind.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<Guid?>("DocumentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("document_id");
+
                     b.Property<string>("DocumentName")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -62,6 +66,10 @@ namespace DocuMind.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("snippet");
 
+                    b.Property<int>("SourceIndex")
+                        .HasColumnType("integer")
+                        .HasColumnName("source_index");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("tenant_id");
@@ -71,6 +79,9 @@ namespace DocuMind.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ChunkId")
                         .HasDatabaseName("ix_citations_chunk_id");
+
+                    b.HasIndex("MessageId")
+                        .HasDatabaseName("ix_citations_message_id");
 
                     b.ToTable("citations", (string)null);
                 });
@@ -139,7 +150,8 @@ namespace DocuMind.Infrastructure.Persistence.Migrations
                         .HasColumnName("created_at");
 
                     b.Property<string>("Error")
-                        .HasColumnType("text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
                         .HasColumnName("error");
 
                     b.Property<string>("FileName")
@@ -174,6 +186,7 @@ namespace DocuMind.Infrastructure.Persistence.Migrations
                         .HasName("pk_documents");
 
                     b.HasIndex("TenantId", "ContentHash")
+                        .IsUnique()
                         .HasDatabaseName("ix_documents_tenant_id_content_hash");
 
                     b.HasIndex("TenantId", "Status")
@@ -709,14 +722,15 @@ namespace DocuMind.Infrastructure.Persistence.Migrations
                     b.HasOne("DocuMind.Domain.Entities.DocumentChunk", null)
                         .WithMany()
                         .HasForeignKey("ChunkId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_citations_document_chunks_chunk_id");
 
                     b.HasOne("DocuMind.Domain.Entities.Message", "Message")
                         .WithMany("Citations")
-                        .HasForeignKey("ChunkId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .HasConstraintName("fk_citations_messages_chunk_id");
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_citations_messages_message_id");
 
                     b.Navigation("Message");
                 });

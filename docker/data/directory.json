@@ -1,0 +1,16 @@
+{
+  "tenant/00000000-0000-0000-0000-000000000002" : {
+    "key" : "tenant/00000000-0000-0000-0000-000000000002",
+    "data" : "eyJpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMiIsImNsb3VkIjoiQXp1cmVDbG91ZCIsImRpc3BsYXlOYW1lIjoiZmxvY2ktYXogbG9jYWwiLCJkZWZhdWx0RG9tYWluIjoiZmxvY2ktYXoubG9jYWwiLCJvcmlnaW4iOiJTRUVEIn0=",
+    "metadata" : { },
+    "lastModified" : "2026-11-21T17:35:06.580186067Z",
+    "etag" : "6120638e-42a9-4762-aae9-4f2865726fea"
+  },
+  "subscription/00000000-0000-0000-0000-000000000001" : {
+    "key" : "subscription/00000000-0000-0000-0000-000000000001",
+    "data" : "eyJpZCI6IjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMSIsInRlbmFudElkIjoiMDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAyIiwiZGlzcGxheU5hbWUiOiJmbG9jaS1heiBsb2NhbCIsInN0YXRlIjoiRW5hYmxlZCIsIm9yaWdpbiI6IlNFRUQifQ==",
+    "metadata" : { },
+    "lastModified" : "2026-11-21T17:35:06.580682304Z",
+    "etag" : "89917b6f-dab2-4970-9d5a-4e687e26ed17"
+  }
+}

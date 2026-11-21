@@ -69,9 +69,10 @@ namespace DocuMind.Infrastructure.Persistence
                 e.Property(x=>x.BlobName).HasMaxLength(500);
                 e.Property(x=>x.ContentHash).HasMaxLength(64);
                 e.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+                e.Property(x => x.Error).HasMaxLength(2000);
                 e.HasOne<Tenant>().WithMany().HasForeignKey(x=>x.TenantId).OnDelete(DeleteBehavior.Cascade);
                 e.HasIndex(x => new { x.TenantId, x.Status });
-                e.HasIndex(x => new {x.TenantId,x.ContentHash});
+                e.HasIndex(x => new {x.TenantId,x.ContentHash}).IsUnique();
                 e.HasMany(x => x.Chunks).WithOne(c => c.Document)
                     .HasForeignKey(c => c.DocumentId).OnDelete(DeleteBehavior.Cascade);
             });
@@ -104,14 +105,14 @@ namespace DocuMind.Infrastructure.Persistence
                 e.Property(x => x.Model).HasMaxLength(100);
                 e.HasIndex(x => new { x.ConversationId, x.CreatedAt });
                 e.HasMany(x => x.Citations).WithOne(c => c.Message)
-                .HasForeignKey(c => c.ChunkId).OnDelete(DeleteBehavior.SetNull);
+                .HasForeignKey(c => c.MessageId).OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<Citation>(e =>
             {
                 e.Property(x => x.DocumentName).HasMaxLength(500);
                 e.HasOne<DocumentChunk>().WithMany()
-                    .HasForeignKey(x => x.ChunkId).OnDelete(DeleteBehavior.Cascade);
+                    .HasForeignKey(x => x.ChunkId).OnDelete(DeleteBehavior.SetNull);
             });
 
             builder.Entity<Feedback>(e =>
@@ -141,11 +142,11 @@ namespace DocuMind.Infrastructure.Persistence
         private void ApplyTenantFilter<T>(ModelBuilder b) where T : class, ITenantOwned
             => b.Entity<T>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
 
-        //public override Task<int> SaveChangesASync(bool acceptAllChangesOnSuccess,CancellationToken ct = default)
-        //{
-        //    StampTenant();
-        //    return base.SaveChanges(acceptAllChangesOnSuccess);
-        //}
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken ct = default)
+        {
+            StampTenant();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess);
+        }
 
         private void StampTenant()
         {
